@@ -18,6 +18,7 @@ interface TierList {
   created_at: string;
   likes: number;
   views: number;
+  liked_by?: string[];
   expert_analysis?: {
     methodology?: string;
     evaluation_criteria?: string;
@@ -122,9 +123,11 @@ const TierListViewSimple = () => {
     if (!id) return;
     
     try {
-      const { error } = await supabase.rpc('increment_views', {
-        tierlist_id: id
-      });
+      // Incrementar views diretamente na tabela tier_lists
+      const { error } = await supabase
+        .from('tier_lists')
+        .update({ views: (tierList?.views || 0) + 1 })
+        .eq('id', id);
       
       if (error) {
         console.error('Erro ao incrementar views:', error);
@@ -140,24 +143,17 @@ const TierListViewSimple = () => {
     if (!id || !user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('tierlist_likes')
-        .select('id')
-        .eq('tierlist_id', id)
-        .eq('user_id', user.id)
-        .single();
-        
-      if (!error && data) {
-        setIsLiked(true);
-      }
+      // Por enquanto, vamos simular o estado de like baseado no localStorage
+      const likedTierlists = JSON.parse(localStorage.getItem('likedTierlists') || '[]');
+      setIsLiked(likedTierlists.includes(id));
     } catch (error) {
-      // Usuário não curtiu ainda
+      console.error('Erro ao verificar like:', error);
       setIsLiked(false);
     }
   };
 
   const handleLike = async () => {
-    if (!user || !id) {
+    if (!user || !id || !tierList) {
       toast({
         title: "Erro",
         description: "Você precisa estar logado para curtir.",
@@ -167,43 +163,58 @@ const TierListViewSimple = () => {
     }
 
     try {
+      const likedTierlists = JSON.parse(localStorage.getItem('likedTierlists') || '[]');
+      let newLikesCount;
+
       if (isLiked) {
         // Remover like
-        const { error } = await supabase
-          .from('tierlist_likes')
-          .delete()
-          .eq('tierlist_id', id)
-          .eq('user_id', user.id);
-          
-        if (error) throw error;
+        const updatedLiked = likedTierlists.filter((tierlistId: string) => tierlistId !== id);
+        localStorage.setItem('likedTierlists', JSON.stringify(updatedLiked));
+        newLikesCount = Math.max((tierList.likes || 0) - 1, 0);
         
         setIsLiked(false);
-        setLikesCount(prev => prev - 1);
-        
-        // Decrementar contador na tabela tier_lists
-        await supabase.rpc('decrement_likes', { tierlist_id: id });
+        setLikesCount(newLikesCount);
       } else {
         // Adicionar like
-        const { error } = await supabase
-          .from('tierlist_likes')
-          .insert({
-            tierlist_id: id,
-            user_id: user.id
-          });
-          
-        if (error) throw error;
+        const updatedLiked = [...likedTierlists, id];
+        localStorage.setItem('likedTierlists', JSON.stringify(updatedLiked));
+        newLikesCount = (tierList.likes || 0) + 1;
         
         setIsLiked(true);
-        setLikesCount(prev => prev + 1);
-        
-        // Incrementar contador na tabela tier_lists
-        await supabase.rpc('increment_likes', { tierlist_id: id });
+        setLikesCount(newLikesCount);
       }
+
+      // Atualizar contador no banco de dados
+      const { error } = await supabase
+        .from('tier_lists')
+        .update({ likes: newLikesCount })
+        .eq('id', id);
+        
+      if (error) {
+        throw error;
+      }
+
+      // Atualizar estado local
+      setTierList(prev => prev ? {
+        ...prev,
+        likes: newLikesCount
+      } : null);
+
+      toast({
+        title: isLiked ? "Like removido!" : "Tierlist curtida!",
+        description: isLiked ? "Você removeu seu like desta tierlist." : "Obrigado por curtir esta tierlist!",
+      });
+
     } catch (error) {
       console.error('Erro ao curtir:', error);
+      
+      // Reverter estado em caso de erro
+      setIsLiked(!isLiked);
+      setLikesCount(tierList.likes || 0);
+      
       toast({
         title: "Erro",
-        description: "Não foi possível curtir a tierlist.",
+        description: "Não foi possível curtir a tierlist. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -417,22 +428,137 @@ const TierListViewSimple = () => {
           })}
         </div>
 
-        {/* Dados Técnicos (Colapsável) */}
+        {/* Dados Técnicos Expandidos */}
         <Card className="p-6">
           <details className="group">
             <summary className="cursor-pointer text-xl font-bold mb-4 flex items-center gap-2">
               <span className="group-open:rotate-90 transition-transform">▶</span>
               Dados Técnicos da Tierlist
             </summary>
-            <div className="space-y-2 mt-4">
-              <p><strong>ID:</strong> {tierList.id}</p>
-              <p><strong>Categoria ID:</strong> {tierList.category_id}</p>
-              <p><strong>Usuário ID:</strong> {tierList.user_id}</p>
-              <p><strong>Pública:</strong> {tierList.is_public ? 'Sim' : 'Não'}</p>
-              <p><strong>Estrutura dos Tiers:</strong></p>
-              <pre className="bg-muted p-4 rounded text-sm overflow-auto">
-                {JSON.stringify(tierList.tiers, null, 2)}
-              </pre>
+            <div className="space-y-6 mt-4">
+              
+              {/* Informações Básicas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-primary">Informações Básicas</h3>
+                  <div className="space-y-1 text-sm">
+                    <p><strong>ID:</strong> <code className="bg-muted px-1 rounded">{tierList.id}</code></p>
+                    <p><strong>Categoria ID:</strong> <code className="bg-muted px-1 rounded">{tierList.category_id}</code></p>
+                    <p><strong>Usuário ID:</strong> <code className="bg-muted px-1 rounded">{tierList.user_id}</code></p>
+                    <p><strong>Visibilidade:</strong> <span className={`px-2 py-1 rounded text-xs ${tierList.is_public ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {tierList.is_public ? 'Pública' : 'Privada'}
+                    </span></p>
+                    <p><strong>Data de Criação:</strong> {new Date(tierList.created_at).toLocaleString()}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-primary">Estatísticas</h3>
+                  <div className="space-y-1 text-sm">
+                    <p><strong>Total de Likes:</strong> <span className="text-blue-600 font-medium">{likesCount}</span></p>
+                    <p><strong>Total de Visualizações:</strong> <span className="text-green-600 font-medium">{viewsCount}</span></p>
+                    <p><strong>Produtos Classificados:</strong> <span className="text-purple-600 font-medium">
+                      {Object.values(tierList.tiers || {}).flat().length}
+                    </span></p>
+                    <p><strong>Tiers Utilizados:</strong> <span className="text-orange-600 font-medium">
+                      {Object.entries(tierList.tiers || {}).filter(([_, products]) => Array.isArray(products) && products.length > 0).length}
+                    </span></p>
+                    <p><strong>Taxa de Engajamento:</strong> <span className="text-indigo-600 font-medium">
+                      {viewsCount > 0 ? ((likesCount / viewsCount) * 100).toFixed(1) : 0}%
+                    </span></p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Distribuição por Tiers */}
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-primary">Distribuição por Tiers</h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {Object.entries(tierList.tiers || {}).map(([tierName, productIds]) => {
+                    const count = Array.isArray(productIds) ? productIds.length : 0;
+                    const tierColors = {
+                      S: "bg-blue-500",
+                      A: "bg-green-500", 
+                      B: "bg-yellow-500",
+                      C: "bg-orange-500",
+                      D: "bg-red-500"
+                    };
+                    const colorClass = tierColors[tierName as keyof typeof tierColors] || "bg-gray-500";
+                    
+                    return (
+                      <div key={tierName} className="text-center">
+                        <div className={`${colorClass} text-white font-bold text-lg rounded-t px-2 py-1`}>
+                          {tierName}
+                        </div>
+                        <div className="bg-muted rounded-b px-2 py-1 text-sm">
+                          {count} {count === 1 ? 'produto' : 'produtos'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Produtos por Categoria */}
+              {products.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-primary">Produtos da Categoria</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {products.slice(0, 6).map((product) => (
+                      <div key={product.id} className="bg-muted rounded-lg p-3 text-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          {product.image_url ? (
+                            <img
+                              src={product.image_url}
+                              alt={product.name}
+                              className="w-8 h-8 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-background rounded flex items-center justify-center">
+                              <Package className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{product.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">ID: {product.id.slice(-8)}</p>
+                          </div>
+                        </div>
+                        {product.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
+                        )}
+                      </div>
+                    ))}
+                    {products.length > 6 && (
+                      <div className="bg-muted rounded-lg p-3 text-sm flex items-center justify-center text-muted-foreground">
+                        +{products.length - 6} produtos adicionais
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Estrutura JSON dos Tiers */}
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-primary">Estrutura dos Tiers (JSON)</h3>
+                <pre className="bg-muted p-4 rounded text-xs overflow-auto max-h-40">
+                  {JSON.stringify(tierList.tiers, null, 2)}
+                </pre>
+              </div>
+
+              {/* Informações de Debug */}
+              <details className="border-t pt-4">
+                <summary className="cursor-pointer text-sm font-medium text-muted-foreground mb-2">
+                  Informações de Debug
+                </summary>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>Timestamp de Carregamento:</strong> {new Date().toISOString()}</p>
+                  <p><strong>Produtos Carregados:</strong> {products.length}</p>
+                  <p><strong>Estado de Like:</strong> {isLiked ? 'Curtido' : 'Não curtido'}</p>
+                  <p><strong>Usuário Logado:</strong> {user ? 'Sim' : 'Não'}</p>
+                  <p><strong>ID do Usuário:</strong> {user?.id || 'N/A'}</p>
+                  <p><strong>Likes Locais:</strong> {JSON.parse(localStorage.getItem('likedTierlists') || '[]').length} tierlists curtidas</p>
+                </div>
+              </details>
             </div>
           </details>
         </Card>
