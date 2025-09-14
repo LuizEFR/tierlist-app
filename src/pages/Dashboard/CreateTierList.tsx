@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { SearchInput } from "@/components/ui/search-input";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageHeader } from "@/components/ui/page-header";
 import { supabase } from "@/integrations/supabase/client";
 import { Crown, ArrowLeft, Package, Filter, Sparkles } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
@@ -159,7 +160,7 @@ export default function CreateTierList() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (!over) {
       setActiveId(null);
       return;
@@ -213,6 +214,12 @@ export default function CreateTierList() {
         setActiveId(null);
         return;
       }
+    }
+
+    // If the source and destination are the same, do nothing
+    if (sourceTier === destTier) {
+      setActiveId(null);
+      return;
     }
 
     // Remove from source
@@ -315,29 +322,17 @@ export default function CreateTierList() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4 animate-fade-in">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/dashboard/tierlists')}
-          className="hover-lift"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground gradient-text">Criar Tierlist</h1>
-          <p className="text-muted-foreground">
-            Crie uma nova tierlist para organizar seus produtos
-          </p>
-        </div>
-        <div className="ml-auto">
-          <Badge variant="outline" className="glass-effect">
-            <Sparkles className="w-3 h-3 mr-1" />
-            Premium
-          </Badge>
-        </div>
-      </div>
+      <PageHeader
+        title="Criar Tierlist"
+        description="Crie uma nova tierlist para organizar seus produtos"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard/analytics" },
+          { label: "Tierlists", href: "/dashboard/tierlists" },
+          { label: "Criar" }
+        ]}
+        backTo="/dashboard/tierlists"
+        badge={{ text: "Premium" }}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulário */}

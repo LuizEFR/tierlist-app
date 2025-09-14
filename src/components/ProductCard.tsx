@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Award, DollarSign } from "lucide-react";
+import { Star, DollarSign } from "lucide-react";
 
 interface ProductSpec {
   label: string;
@@ -77,12 +77,6 @@ const ProductCard = ({
               <span className="text-foreground font-medium">{spec.value}</span>
             </div>
           ))}
-        </div>
-        
-        {/* Premium indicator */}
-        <div className="flex items-center justify-center mt-2 pt-2 border-t border-border/50">
-          <Award className="w-3 h-3 text-primary mr-1" />
-          <span className="text-xs text-primary font-medium">Verified Review</span>
         </div>
       </div>
     </Card>

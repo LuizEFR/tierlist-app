@@ -1,19 +1,69 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Crown, LogIn, User, ArrowRight, Trophy, Star, Zap, Target, BarChart3, Shield, Sparkles, Rocket, Users } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { 
+  Crown, 
+  LogIn, 
+  User, 
+  ArrowRight, 
+  Trophy, 
+  Star, 
+  Zap, 
+  Target, 
+  BarChart3, 
+  Shield, 
+  Sparkles, 
+  Rocket, 
+  Users,
+  CheckCircle,
+  Play,
+  TrendingUp,
+  Award,
+  Layers,
+  Settings,
+  Download,
+  Share2,
+  Eye,
+  Heart,
+  MessageSquare
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Card } from "@/components/ui/card";
-import heroImage from "@/assets/hero-tech.jpg";
 
 const Index = () => {
-  const { user, profile, signOut, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleGetStarted = () => {
+    if (user) {
+      navigate("/dashboard/analytics");
+    } else {
+      navigate("/auth");
+    }
+  };
+
+  const handleStartTrial = () => {
+    navigate("/auth?mode=signup");
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
-        <div className="text-center">
-          <Crown className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-          <p className="text-muted-foreground">Carregando...</p>
+        <div className="text-center animate-pulse">
+          <Crown className="w-16 h-16 text-primary mx-auto mb-4 animate-spin" />
+          <p className="text-muted-foreground text-lg">Carregando TierForge Lab...</p>
         </div>
       </div>
     );
@@ -22,65 +72,60 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-hero">
       {/* Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <nav className={`sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled ? 'bg-background/95 backdrop-blur-lg shadow-lg' : 'bg-transparent'
+      }`}>
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 animate-fade-in">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center shadow-glow animate-glow">
-                <Crown className="w-4 h-4 text-white" />
+            <div className="flex items-center gap-3 animate-fade-in">
+              <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow animate-glow">
+                <Crown className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold gradient-text">
-                TechTier
-              </span>
+              <div>
+                <span className="text-xl font-bold gradient-text">TierForge Lab</span>
+                <div className="text-xs text-muted-foreground">Professional Tier Lists</div>
+              </div>
             </div>
             
             <div className="flex items-center gap-4 animate-fade-in">
               <Link to="/explore">
                 <Button variant="ghost" size="sm" className="hover-lift">
-                  Explore
+                  <Eye className="w-4 h-4 mr-2" />
+                  Explorar
+                </Button>
+              </Link>
+              <Link to="/pricing">
+                <Button variant="ghost" size="sm" className="hover-lift">
+                  <Trophy className="w-4 h-4 mr-2" />
+                  Planos
                 </Button>
               </Link>
               {user ? (
-                <>
+                <div className="flex items-center gap-3">
                   <Link to="/dashboard/analytics">
-                    <Button variant="ghost" size="sm" className="hover-lift">
+                    <Button className="hover-lift">
+                      <BarChart3 className="w-4 h-4 mr-2" />
                       Dashboard
                     </Button>
                   </Link>
                   <div className="flex items-center gap-2 text-sm glass-effect px-3 py-2 rounded-full">
-                    <User className="w-4 h-4" />
-                    <span className="text-muted-foreground">
-                      {profile?.full_name || user.email}
-                    </span>
-                    <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full capitalize animate-pulse">
-                      {profile?.subscription_tier || 'standard'}
-                    </span>
+                    <User className="w-4 h-4 text-primary" />
+                    <span className="font-medium">{profile?.full_name || user.email}</span>
                   </div>
-                  <Link to="/pricing">
-                    <Button variant="outline" size="sm" className="hover-lift">
-                      <Crown className="w-4 h-4 mr-2" />
-                      Upgrade
-                    </Button>
-                  </Link>
-                  <Button variant="ghost" size="sm" onClick={signOut} className="hover-lift">
-                    Sair
-                  </Button>
-                </>
+                </div>
               ) : (
-                <>
-                  <Link to="/pricing">
-                    <Button variant="outline" size="sm" className="hover-lift">
-                      <Crown className="w-4 h-4 mr-2" />
-                      Planos
-                    </Button>
-                  </Link>
+                <div className="flex items-center gap-2">
                   <Link to="/auth">
-                    <Button size="sm" className="hover-lift animate-glow">
+                    <Button variant="outline" size="sm" className="hover-lift">
                       <LogIn className="w-4 h-4 mr-2" />
                       Entrar
                     </Button>
                   </Link>
-                </>
+                  <Button onClick={handleGetStarted} className="hover-lift">
+                    <Rocket className="w-4 h-4 mr-2" />
+                    Começar Grátis
+                  </Button>
+                </div>
               )}
             </div>
           </div>
@@ -88,200 +133,235 @@ const Index = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background with gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-hero" />
-        <div 
-          className="absolute inset-0 opacity-30 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        />
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+      <section className="relative py-20 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-float-delayed" />
         
-        {/* Content */}
-        <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-          <div className="mb-8 animate-slide-up">
-            <div className="inline-flex items-center gap-2 glass-effect rounded-full px-6 py-3 border border-border mb-6 hover-lift">
-              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-              <span className="text-sm font-medium">Plataforma Premium de Rankings</span>
-              <Rocket className="w-4 h-4 text-secondary animate-bounce" />
-            </div>
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 gradient-text animate-scale-in">
-            TechTier
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed animate-fade-in">
-            Crie rankings definitivos de produtos tech baseados em especificações técnicas, 
-            qualidade de construção e análises detalhadas. Para quem leva hardware a sério.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 animate-slide-up">
-            <Link to={user ? "/dashboard/analytics" : "/auth"}>
-              <Button variant="hero" size="lg" className="text-lg px-8 py-6 hover-lift animate-glow">
-                {user ? "Ir ao Dashboard" : "Começar Agora"}
+        <div className="max-w-7xl mx-auto px-6 relative">
+          <div className="text-center space-y-8 animate-fade-in">
+            <Badge className="glass-effect text-sm px-4 py-2">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Plataforma Premium de Tier Lists
+            </Badge>
+            
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
+              <span className="gradient-text">Crie Tier Lists</span>
+              <br />
+              <span className="text-foreground">Profissionais</span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              A ferramenta mais avançada para criar, organizar e compartilhar tier lists de produtos. 
+              <span className="text-primary font-semibold"> Transforme suas comparações em insights poderosos.</span>
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+              <Button 
+                size="lg" 
+                onClick={handleGetStarted}
+                className="text-lg px-8 py-6 hover-lift shadow-glow"
+              >
+                <Rocket className="w-5 h-5 mr-2" />
+                Começar Gratuitamente
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-            </Link>
-            <Link to="/explore">
-              <Button variant="premium" size="lg" className="text-lg px-8 py-6 hover-lift">
-                Ver Rankings
-                <Trophy className="w-5 h-5 ml-2" />
+              
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={() => navigate("/explore")}
+                className="text-lg px-8 py-6 hover-lift glass-effect"
+              >
+                <Play className="w-5 h-5 mr-2" />
+                Ver Demonstração
               </Button>
-            </Link>
-          </div>
-          
-          {/* Enhanced Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="glass-effect rounded-xl p-6 border border-border hover-lift animate-scale-in">
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center shadow-glow animate-float">
-                  <Trophy className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              <h3 className="text-3xl font-bold mb-2 gradient-text">500+</h3>
-              <p className="text-muted-foreground">Produtos Avaliados</p>
             </div>
             
-            <div className="glass-effect rounded-xl p-6 border border-border hover-lift animate-scale-in" style={{animationDelay: '0.2s'}}>
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-12 h-12 bg-gradient-secondary rounded-full flex items-center justify-center shadow-glow animate-float" style={{animationDelay: '2s'}}>
-                  <Star className="w-6 h-6 text-white" />
-                </div>
+            <div className="flex items-center justify-center gap-8 pt-8 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Teste grátis por 14 dias</span>
               </div>
-              <h3 className="text-3xl font-bold mb-2 gradient-text">1.2K+</h3>
-              <p className="text-muted-foreground">Tier Lists Criadas</p>
-            </div>
-            
-            <div className="glass-effect rounded-xl p-6 border border-border hover-lift animate-scale-in" style={{animationDelay: '0.4s'}}>
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center shadow-glow animate-float" style={{animationDelay: '4s'}}>
-                  <Users className="w-6 h-6 text-white" />
-                </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Sem cartão de crédito</span>
               </div>
-              <h3 className="text-3xl font-bold mb-2 gradient-text">25K+</h3>
-              <p className="text-muted-foreground">Usuários Ativos</p>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Cancele a qualquer momento</span>
+              </div>
             </div>
           </div>
         </div>
-        
-        {/* Enhanced floating elements */}
-        <div className="absolute top-1/4 left-10 w-3 h-3 bg-primary rounded-full animate-pulse shadow-glow" />
-        <div className="absolute top-1/3 right-20 w-4 h-4 bg-secondary rounded-full animate-pulse delay-1000 shadow-glow" />
-        <div className="absolute bottom-1/4 left-1/4 w-2 h-2 bg-accent rounded-full animate-pulse delay-500 shadow-glow" />
-        <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-primary rounded-full animate-float" />
-        <div className="absolute bottom-1/3 right-10 w-3 h-3 bg-accent rounded-full animate-float delay-1000" />
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-background/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div className="space-y-2 animate-fade-in">
+              <div className="text-3xl md:text-4xl font-bold gradient-text">10K+</div>
+              <div className="text-muted-foreground">Tier Lists Criadas</div>
+            </div>
+            <div className="space-y-2 animate-fade-in animate-delay-100">
+              <div className="text-3xl md:text-4xl font-bold gradient-text">5K+</div>
+              <div className="text-muted-foreground">Usuários Ativos</div>
+            </div>
+            <div className="space-y-2 animate-fade-in animate-delay-200">
+              <div className="text-3xl md:text-4xl font-bold gradient-text">50K+</div>
+              <div className="text-muted-foreground">Produtos Avaliados</div>
+            </div>
+            <div className="space-y-2 animate-fade-in animate-delay-300">
+              <div className="text-3xl md:text-4xl font-bold gradient-text">99%</div>
+              <div className="text-muted-foreground">Satisfação</div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 animate-fade-in">
-            <h2 className="text-4xl font-bold mb-4 gradient-text">
-              Funcionalidades Principais
+      <section className="py-20 lg:py-32">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center space-y-4 mb-16 animate-fade-in">
+            <Badge variant="outline" className="glass-effect">
+              <Zap className="w-4 h-4 mr-2" />
+              Funcionalidades Premium
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-bold">
+              Tudo que você precisa para criar
+              <span className="gradient-text"> tier lists perfeitas</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Tudo que você precisa para criar rankings profissionais e comparações detalhadas
+              Ferramentas profissionais que transformam a forma como você organiza e compara produtos
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="glass-effect border-border p-6 hover-lift tier-card animate-scale-in">
-              <div className="flex items-center mb-4">
-                <div className="p-3 rounded-lg bg-gradient-primary shadow-glow">
-                  <Target className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold ml-4">Tier Lists Personalizadas</h3>
-              </div>
-              <p className="text-muted-foreground">
-                Crie rankings personalizados com drag & drop. Organize produtos em tiers S, A, B, C, D 
-                com facilidade e compartilhe com a comunidade.
-              </p>
-            </Card>
 
-            <Card className="glass-effect border-border p-6 hover-lift tier-card animate-scale-in" style={{animationDelay: '0.2s'}}>
-              <div className="flex items-center mb-4">
-                <div className="p-3 rounded-lg bg-gradient-secondary shadow-glow">
-                  <BarChart3 className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold ml-4">Analytics Avançado</h3>
-              </div>
-              <p className="text-muted-foreground">
-                Acompanhe o desempenho dos seus rankings com métricas detalhadas. 
-                Visualizações, likes e engajamento da sua audiência.
-              </p>
-            </Card>
-
-            <Card className="glass-effect border-border p-6 hover-lift tier-card animate-scale-in" style={{animationDelay: '0.4s'}}>
-              <div className="flex items-center mb-4">
-                <div className="p-3 rounded-lg bg-gradient-primary shadow-glow">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold ml-4">Gestão Completa</h3>
-              </div>
-              <p className="text-muted-foreground">
-                Sistema completo de cadastro de produtos, categorias e parâmetros técnicos. 
-                Organize tudo de forma profissional.
-              </p>
-            </Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Layers,
+                title: "Drag & Drop Intuitivo",
+                description: "Interface fluida para organizar produtos com facilidade total",
+                color: "text-blue-500"
+              },
+              {
+                icon: Settings,
+                title: "Parâmetros Customizáveis",
+                description: "Crie critérios únicos de avaliação para cada categoria",
+                color: "text-purple-500"
+              },
+              {
+                icon: BarChart3,
+                title: "Analytics Avançado",
+                description: "Insights detalhados sobre suas tier lists e engajamento",
+                color: "text-green-500"
+              },
+              {
+                icon: Share2,
+                title: "Compartilhamento Fácil",
+                description: "Exporte em múltiplos formatos e compartilhe com o mundo",
+                color: "text-orange-500"
+              },
+              {
+                icon: Users,
+                title: "Colaboração em Tempo Real",
+                description: "Trabalhe em equipe com sincronização instantânea",
+                color: "text-pink-500"
+              },
+              {
+                icon: Shield,
+                title: "Backup Automático",
+                description: "Seus dados sempre seguros na nuvem com versionamento",
+                color: "text-cyan-500"
+              }
+            ].map((feature, index) => (
+              <Card key={index} className="glass-effect hover-lift animate-fade-in group" style={{animationDelay: `${index * 100}ms`}}>
+                <CardHeader>
+                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-${feature.color.split('-')[1]}-500/20 to-${feature.color.split('-')[1]}-600/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <feature.icon className={`w-6 h-6 ${feature.color}`} />
+                  </div>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">
+                    {feature.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 relative overflow-hidden">
-        <div className="absolute inset-0 glass-effect" />
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-4xl font-bold mb-6 gradient-text animate-fade-in">
-            Pronto para criar rankings profissionais?
+      <section className="py-20 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-8 animate-fade-in">
+          <Badge className="glass-effect text-lg px-6 py-3">
+            <Trophy className="w-5 h-5 mr-2" />
+            Comece Hoje Mesmo
+          </Badge>
+          
+          <h2 className="text-3xl md:text-5xl font-bold">
+            Pronto para criar suas
+            <span className="gradient-text"> tier lists profissionais?</span>
           </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-slide-up">
-            Junte-se a milhares de enthusiasts que já usam o TechTier para criar 
-            os melhores rankings de produtos tech do mercado.
+          
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Junte-se a milhares de usuários que já transformaram suas comparações em insights valiosos
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-scale-in">
-            {!user ? (
-              <>
-                <Link to="/auth">
-                  <Button variant="hero" size="lg" className="text-lg px-8 py-6 hover-lift animate-glow">
-                    Criar Conta Grátis
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </Link>
-                <Link to="/pricing">
-                  <Button variant="outline" size="lg" className="text-lg px-8 py-6 hover-lift glass-effect">
-                    <Crown className="w-5 h-5 mr-2" />
-                    Ver Planos Premium
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link to="/dashboard/tierlists/create">
-                  <Button variant="hero" size="lg" className="text-lg px-8 py-6 hover-lift animate-glow">
-                    Criar Tier List
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </Link>
-                <Link to="/pricing">
-                  <Button variant="outline" size="lg" className="text-lg px-8 py-6 hover-lift glass-effect">
-                    <Crown className="w-5 h-5 mr-2" />
-                    Upgrade Premium
-                  </Button>
-                </Link>
-              </>
-            )}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+            <Button 
+              size="lg" 
+              onClick={handleStartTrial}
+              className="text-lg px-8 py-6 hover-lift shadow-glow"
+            >
+              <Sparkles className="w-5 h-5 mr-2" />
+              Teste Grátis por 14 Dias
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            
+            <Link to="/pricing">
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="text-lg px-8 py-6 hover-lift glass-effect"
+              >
+                <Award className="w-5 h-5 mr-2" />
+                Ver Planos
+              </Button>
+            </Link>
           </div>
         </div>
-        
-        {/* Floating elements for CTA section */}
-        <div className="absolute top-10 left-10 w-2 h-2 bg-primary rounded-full animate-float" />
-        <div className="absolute bottom-10 right-10 w-3 h-3 bg-secondary rounded-full animate-float delay-1000" />
-        <div className="absolute top-1/2 left-1/4 w-1 h-1 bg-accent rounded-full animate-pulse" />
       </section>
+
+      {/* Footer */}
+      <footer className="py-12 border-t border-border bg-background/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <Crown className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <span className="font-bold gradient-text">TierForge Lab</span>
+                <div className="text-xs text-muted-foreground">© 2024 - Todos os direitos reservados</div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <Link to="/pricing" className="hover:text-primary transition-colors">Planos</Link>
+              <Link to="/explore" className="hover:text-primary transition-colors">Explorar</Link>
+              <span>Suporte</span>
+              <span>Privacidade</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
 
 export default Index;
+
