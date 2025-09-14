@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Heart, Eye, Share2, Sparkles } from "lucide-react";
+import { ArrowLeft, Heart, Eye, Share2, Sparkles, Package } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -28,17 +28,47 @@ interface TierList {
   };
 }
 
+interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  image_url?: string;
+}
+
 const TierListViewSimple = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [tierList, setTierList] = useState<TierList | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [viewsCount, setViewsCount] = useState(0);
+
+  const getProduct = (productId: string): Product | null => {
+    return products.find(p => p.id === productId) || null;
+  };
+
+  const fetchProducts = async (categoryId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("category_id", categoryId);
+
+      if (error) {
+        console.error("Erro ao buscar produtos:", error);
+        return;
+      }
+
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Erro ao buscar produtos:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchTierList = async () => {
@@ -66,6 +96,9 @@ const TierListViewSimple = () => {
         setTierList(data);
         setLikesCount(data.likes || 0);
         setViewsCount(data.views || 0);
+        
+        // Buscar produtos da categoria
+        await fetchProducts(data.category_id);
         
         // Incrementar views
         await incrementViews();
@@ -327,18 +360,81 @@ const TierListViewSimple = () => {
           </Card>
         )}
 
+        {/* Renderização Visual dos Tiers */}
+        <div className="space-y-4 mb-8">
+          {Object.entries(tierList.tiers || {}).map(([tierName, productIds]) => {
+            const tierColors = {
+              S: "bg-blue-500",
+              A: "bg-green-500", 
+              B: "bg-yellow-500",
+              C: "bg-orange-500",
+              D: "bg-red-500"
+            };
+            
+            const colorClass = tierColors[tierName as keyof typeof tierColors] || "bg-gray-500";
+            
+            return (
+              <Card key={tierName} className="overflow-hidden">
+                <div className="flex">
+                  <div className={`${colorClass} text-white font-bold text-2xl flex items-center justify-center w-20 min-h-[120px]`}>
+                    {tierName}
+                  </div>
+                  <div className="flex-1 p-4 min-h-[120px] flex flex-wrap gap-2 items-start content-start">
+                    {Array.isArray(productIds) && productIds.length > 0 ? (
+                      productIds.map((productId: string, index: number) => {
+                        const product = getProduct(productId);
+                        return (
+                          <div
+                            key={`${productId}-${index}`}
+                            className="w-20 h-20 bg-card border rounded-lg p-1 flex flex-col items-center justify-center text-center hover:shadow-md transition-shadow"
+                          >
+                            {product?.image_url ? (
+                              <img
+                                src={product.image_url}
+                                alt={product.name}
+                                className="w-8 h-8 object-cover rounded mb-1"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 bg-muted rounded flex items-center justify-center mb-1">
+                                <Package className="w-4 h-4 text-muted-foreground" />
+                              </div>
+                            )}
+                            <span className="text-xs text-foreground truncate w-full" title={product?.name || `Produto ${productId.slice(-4)}`}>
+                              {product?.name || `Produto ${productId.slice(-4)}`}
+                            </span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full text-muted-foreground">
+                        Nenhum produto neste tier
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Dados Técnicos (Colapsável) */}
         <Card className="p-6">
-          <h2 className="text-2xl font-bold mb-4">Dados da Tierlist</h2>
-          <div className="space-y-2">
-            <p><strong>ID:</strong> {tierList.id}</p>
-            <p><strong>Categoria ID:</strong> {tierList.category_id}</p>
-            <p><strong>Usuário ID:</strong> {tierList.user_id}</p>
-            <p><strong>Pública:</strong> {tierList.is_public ? 'Sim' : 'Não'}</p>
-            <p><strong>Tiers:</strong></p>
-            <pre className="bg-muted p-4 rounded text-sm overflow-auto">
-              {JSON.stringify(tierList.tiers, null, 2)}
-            </pre>
-          </div>
+          <details className="group">
+            <summary className="cursor-pointer text-xl font-bold mb-4 flex items-center gap-2">
+              <span className="group-open:rotate-90 transition-transform">▶</span>
+              Dados Técnicos da Tierlist
+            </summary>
+            <div className="space-y-2 mt-4">
+              <p><strong>ID:</strong> {tierList.id}</p>
+              <p><strong>Categoria ID:</strong> {tierList.category_id}</p>
+              <p><strong>Usuário ID:</strong> {tierList.user_id}</p>
+              <p><strong>Pública:</strong> {tierList.is_public ? 'Sim' : 'Não'}</p>
+              <p><strong>Estrutura dos Tiers:</strong></p>
+              <pre className="bg-muted p-4 rounded text-sm overflow-auto">
+                {JSON.stringify(tierList.tiers, null, 2)}
+              </pre>
+            </div>
+          </details>
         </Card>
       </div>
     </div>
