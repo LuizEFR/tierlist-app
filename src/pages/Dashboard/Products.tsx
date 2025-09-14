@@ -317,7 +317,7 @@ export default function Products() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Produtos</h1>
@@ -326,17 +326,15 @@ export default function Products() {
           </p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-          setIsCreateDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Produto
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <div className="flex gap-2">
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingProduct(null)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Produto
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingProduct ? 'Editar Produto' : 'Criar Produto'}
@@ -510,6 +508,7 @@ export default function Products() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {categories.length === 0 ? (
@@ -539,41 +538,31 @@ export default function Products() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
-            <Card key={product.id}>
-              <CardHeader className="pb-3">
+            <Card key={product.id} className="hover:shadow-card transition-shadow">
+              <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1">
-                    <CardTitle className="text-lg">{product.name}</CardTitle>
-                    <Badge variant="outline">
-                      {product.category?.name || 'Sem categoria'}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(product)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteProductId(product.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg line-clamp-2">
+                      {product.name}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="outline">
+                        {product.category?.name || 'Sem categoria'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
+                
                 {product.description && (
-                  <CardDescription className="mb-3">
+                  <CardDescription className="line-clamp-2">
                     {product.description}
                   </CardDescription>
                 )}
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
                 {product.image_url && (
-                  <div className="w-full h-32 bg-muted rounded-lg mb-3 overflow-hidden">
+                  <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
                     <img
                       src={product.image_url}
                       alt={product.name}
@@ -585,6 +574,7 @@ export default function Products() {
                     />
                   </div>
                 )}
+                
                 {product.parameter_values && Object.keys(product.parameter_values).length > 0 && (
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Parâmetros:</p>
@@ -597,6 +587,25 @@ export default function Products() {
                     </div>
                   </div>
                 )}
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(product)}
+                    className="flex-1"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setDeleteProductId(product.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
