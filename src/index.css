@@ -1,0 +1,226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Premium Tech Theme */
+    --background: 220 27% 8%;
+    --foreground: 220 15% 95%;
+
+    --card: 220 25% 10%;
+    --card-foreground: 220 15% 95%;
+
+    --popover: 220 25% 10%;
+    --popover-foreground: 220 15% 95%;
+
+    --primary: 190 95% 55%;
+    --primary-foreground: 220 27% 8%;
+
+    --secondary: 270 60% 60%;
+    --secondary-foreground: 220 15% 95%;
+
+    --accent: 280 80% 65%;
+    --accent-foreground: 220 27% 8%;
+
+    --muted: 220 20% 15%;
+    --muted-foreground: 220 10% 60%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 15% 95%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 15%;
+    --ring: 190 95% 55%;
+
+    /* Custom Design Tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(190 95% 55%), hsl(280 80% 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(270 60% 60%), hsl(190 95% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 27% 8%) 0%, hsl(220 25% 12%) 50%, hsl(220 27% 8%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 25% 10% / 0.8), hsl(220 20% 15% / 0.6));
+    
+    --shadow-glow: 0 0 30px hsl(190 95% 55% / 0.3);
+    --shadow-card: 0 8px 32px hsl(220 27% 8% / 0.4);
+    --shadow-premium: 0 20px 40px hsl(190 95% 55% / 0.1);
+    
+    --tier-s: 220 100% 70%;
+    --tier-a: 120 100% 60%;
+    --tier-b: 60 100% 55%;
+    --tier-c: 30 100% 55%;
+    --tier-d: 0 100% 55%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar matching main theme */
+    --sidebar-background: 220 25% 10%;
+    --sidebar-foreground: 220 15% 95%;
+    --sidebar-primary: 190 95% 55%;
+    --sidebar-primary-foreground: 220 27% 8%;
+    --sidebar-accent: 220 20% 15%;
+    --sidebar-accent-foreground: 220 15% 95%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 190 95% 55%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    /* Sidebar matching main theme for dark mode */
+    --sidebar-background: 220 25% 10%;
+    --sidebar-foreground: 220 15% 95%;
+    --sidebar-primary: 190 95% 55%;
+    --sidebar-primary-foreground: 220 27% 8%;
+    --sidebar-accent: 220 20% 15%;
+    --sidebar-accent-foreground: 220 15% 95%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 190 95% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Enhanced animations and effects */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.5s ease-out;
+  }
+  
+  .hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(190 95% 55%), hsl(280 80% 65%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .tier-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  
+  .tier-card:hover {
+    border-color: hsl(var(--primary));
+    transform: scale(1.02);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+  
+  .product-item {
+    transition: all 0.2s ease;
+    cursor: grab;
+  }
+  
+  .product-item:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+    z-index: 1000;
+  }
+  
+  .product-item:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px hsl(190 95% 55% / 0.3); }
+  to { box-shadow: 0 0 30px hsl(190 95% 55% / 0.6); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
