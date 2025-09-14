@@ -15,8 +15,9 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { PageHeader } from "@/components/ui/page-header";
 import { supabase } from "@/integrations/supabase/client";
 import { Crown, ArrowLeft, Package, Filter, Sparkles } from "lucide-react";
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
-import { arrayMove, SortableContext } from "@dnd-kit/sortable";
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDroppable } from "@dnd-kit/core";
+import { arrayMove, SortableContext, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Category {
   id: string;
@@ -45,6 +46,80 @@ const tierColors = {
   C: "tier-c",
   D: "tier-d"
 };
+
+// Componente SortableItem para produtos arrastáveis
+interface SortableItemProps {
+  id: string;
+  product: Product;
+}
+
+function SortableItem({ id, product }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="product-item w-20 h-20 bg-card border rounded-lg p-1 flex flex-col items-center justify-center text-center hover-lift cursor-grab active:cursor-grabbing"
+    >
+      {product.image_url ? (
+        <img
+          src={product.image_url}
+          alt={product.name}
+          className="w-8 h-8 object-cover rounded"
+        />
+      ) : (
+        <Package className="w-6 h-6 text-muted-foreground" />
+      )}
+      <span className="text-xs text-foreground truncate w-full">
+        {product.name}
+      </span>
+    </div>
+  );
+}
+
+// Componente DroppableArea para áreas de drop
+interface DroppableAreaProps {
+  id: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+function DroppableArea({ id, children, className }: DroppableAreaProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id,
+  });
+
+  const style = {
+    backgroundColor: isOver ? 'rgba(59, 130, 246, 0.1)' : undefined,
+    borderColor: isOver ? 'rgb(59, 130, 246)' : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={className}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function CreateTierList() {
   const { user } = useAuth();
@@ -451,7 +526,7 @@ export default function CreateTierList() {
                     </CardHeader>
                     <CardContent>
                       <SortableContext items={tiers[tierName as keyof TierData]}>
-                        <div 
+                        <DroppableArea 
                           id={tierName}
                           className="min-h-[100px] p-4 border-2 border-dashed border-muted rounded-lg flex flex-wrap gap-2 transition-all duration-300 hover:border-primary/50"
                         >
@@ -460,26 +535,14 @@ export default function CreateTierList() {
                             if (!product) return null;
                             
                             return (
-                              <div
+                              <SortableItem
                                 key={productId}
-                                className="product-item w-20 h-20 bg-card border rounded-lg p-1 flex flex-col items-center justify-center text-center hover-lift"
-                              >
-                                {product.image_url ? (
-                                  <img
-                                    src={product.image_url}
-                                    alt={product.name}
-                                    className="w-8 h-8 object-cover rounded"
-                                  />
-                                ) : (
-                                  <Package className="w-6 h-6 text-muted-foreground" />
-                                )}
-                                <span className="text-xs text-foreground truncate w-full">
-                                  {product.name}
-                                </span>
-                              </div>
+                                id={productId}
+                                product={product}
+                              />
                             );
                           })}
-                        </div>
+                        </DroppableArea>
                       </SortableContext>
                     </CardContent>
                   </Card>
@@ -510,7 +573,7 @@ export default function CreateTierList() {
                   </CardHeader>
                   <CardContent>
                     <SortableContext items={unrankedProducts}>
-                      <div 
+                      <DroppableArea 
                         id="unranked"
                         className="min-h-[100px] p-4 border-2 border-dashed border-muted rounded-lg flex flex-wrap gap-2 transition-all duration-300 hover:border-primary/50"
                       >
@@ -527,26 +590,14 @@ export default function CreateTierList() {
                           if (!product) return null;
                           
                           return (
-                            <div
+                            <SortableItem
                               key={productId}
-                              className="product-item w-20 h-20 bg-card border rounded-lg p-1 flex flex-col items-center justify-center text-center hover-lift"
-                            >
-                              {product.image_url ? (
-                                <img
-                                  src={product.image_url}
-                                  alt={product.name}
-                                  className="w-8 h-8 object-cover rounded"
-                                />
-                              ) : (
-                                <Package className="w-6 h-6 text-muted-foreground" />
-                              )}
-                              <span className="text-xs text-foreground truncate w-full">
-                                {product.name}
-                              </span>
-                            </div>
+                              id={productId}
+                              product={product}
+                            />
                           );
                         })}
-                      </div>
+                      </DroppableArea>
                     </SortableContext>
                   </CardContent>
                 </Card>
