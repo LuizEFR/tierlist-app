@@ -1,22 +1,155 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import TierRow from "@/components/TierRow";
-import ProductCard from "@/components/ProductCard";
-import { keyboardsData, keyboardTierList } from "@/data/keyboards";
+import ProductCardEnhanced from "@/components/ProductCardEnhanced";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ThumbsUp, Share2, Eye, Calendar, Award, Crown } from "lucide-react";
-import { useState } from "react";
+
+interface Parameter {
+  id: string;
+  name: string;
+  parameter_type: string;
+  options?: any;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  image_url: string | null;
+  description: string | null;
+  specifications?: any;
+  parameter_values?: any;
+  category?: {
+    name: string;
+  };
+}
+
+interface TierList {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  is_public: boolean;
+  likes: number;
+  views: number;
+  created_at: string;
+  tiers: {
+    S: string[];
+    A: string[];
+    B: string[];
+    C: string[];
+    D: string[];
+  };
+}
 
 const TierListView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [hasLiked, setHasLiked] = useState(false);
+  const [tierList, setTierList] = useState<TierList | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [parameters, setParameters] = useState<Parameter[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+      fetchTierList();
+    }
+  }, [id]);
+
+  const fetchTierList = async () => {
+    try {
+      // Buscar tierlist
+      const { data: tierListData, error: tierListError } = await supabase
+        .from('tierlists')
+        .select(`
+          id,
+          title,
+          description,
+          is_public,
+          likes,
+          views,
+          created_at,
+          tiers,
+          categories:category_id (name)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (tierListError) throw tierListError;
+
+      if (!tierListData) {
+        setLoading(false);
+        return;
+      }
+
+      // Buscar produtos da categoria
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          image_url,
+          description,
+          specifications,
+          parameter_values,
+          categories:category_id (name)
+        `)
+        .eq('category_id', tierListData.category_id);
+
+      if (productsError) throw productsError;
+
+      // Buscar parâmetros da categoria
+      const { data: parametersData, error: parametersError } = await supabase
+        .from('category_parameters')
+        .select(`
+          parameters:parameter_id (
+            id,
+            name,
+            parameter_type,
+            options
+          )
+        `)
+        .eq('category_id', tierListData.category_id);
+
+      if (parametersError) throw parametersError;
+
+      setTierList({
+        ...tierListData,
+        category: tierListData.categories?.name || 'Categoria',
+        tiers: tierListData.tiers || { S: [], A: [], B: [], C: [], D: [] }
+      });
+      setProducts(productsData || []);
+      setParameters(parametersData?.map(cp => cp.parameters).filter(Boolean) || []);
+
+    } catch (error) {
+      console.error('Erro ao buscar tierlist:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getProductsForTier = (tier: keyof typeof tierList.tiers) => {
+    if (!tierList) return [];
+    return tierList.tiers[tier].map(productId => 
+      products.find(p => p.id === productId)
+    ).filter(Boolean);
+  };
   
-  // For now, we'll use the keyboard tier list as example
-  const tierList = keyboardTierList;
-  const allProducts = keyboardsData;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <div className="text-center">
+          <Crown className="w-16 h-16 text-primary animate-spin mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Carregando Tier List...</h1>
+        </div>
+      </div>
+    );
+  }
   
   if (!tierList) {
     return (
@@ -151,15 +284,18 @@ const TierListView = () => {
           </div>
           
           {(['S', 'A', 'B', 'C', 'D'] as const).map(tier => {
-            const products = getProductsForTier(tier);
+            const tierProducts = getProductsForTier(tier);
             return (
               <TierRow key={tier} tier={tier}>
-                {products.map(product => (
+                {tierProducts.map(product => (
                   product && (
-                    <ProductCard 
-                      key={product.id} 
-                      {...product}
+                    <ProductCardEnhanced
+                      key={product.id}
+                      product={product}
+                      parameters={parameters}
                       draggable={false}
+                      size="large"
+                      showDetails={true}
                     />
                   )
                 ))}

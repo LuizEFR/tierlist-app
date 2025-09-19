@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { SearchInput } from "@/components/ui/search-input";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { PageHeader } from "@/components/ui/page-header";
+import ProductCardEnhanced from "@/components/ProductCardEnhanced";
 import { supabase } from "@/integrations/supabase/client";
 import { Crown, ArrowLeft, Package, Filter, Sparkles } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDroppable } from "@dnd-kit/core";
@@ -24,11 +25,23 @@ interface Category {
   name: string;
 }
 
+interface Parameter {
+  id: string;
+  name: string;
+  parameter_type: string;
+  options?: any;
+}
+
 interface Product {
   id: string;
   name: string;
   image_url: string | null;
   description: string | null;
+  specifications?: any;
+  parameter_values?: any;
+  category?: {
+    name: string;
+  };
 }
 
 interface TierData {
@@ -51,9 +64,10 @@ const tierColors = {
 interface SortableItemProps {
   id: string;
   product: Product;
+  parameters: Parameter[];
 }
 
-function SortableItem({ id, product }: SortableItemProps) {
+function SortableItem({ id, product, parameters }: SortableItemProps) {
   const {
     attributes,
     listeners,
@@ -75,20 +89,14 @@ function SortableItem({ id, product }: SortableItemProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="product-item w-20 h-20 bg-card border rounded-lg p-1 flex flex-col items-center justify-center text-center hover-lift cursor-grab active:cursor-grabbing"
     >
-      {product.image_url ? (
-        <img
-          src={product.image_url}
-          alt={product.name}
-          className="w-8 h-8 object-cover rounded"
-        />
-      ) : (
-        <Package className="w-6 h-6 text-muted-foreground" />
-      )}
-      <span className="text-xs text-foreground truncate w-full">
-        {product.name}
-      </span>
+      <ProductCardEnhanced
+        product={product}
+        parameters={parameters}
+        draggable={true}
+        size="medium"
+        showDetails={false}
+      />
     </div>
   );
 }
@@ -128,6 +136,7 @@ export default function CreateTierList() {
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [parameters, setParameters] = useState<Parameter[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -160,6 +169,7 @@ export default function CreateTierList() {
   useEffect(() => {
     if (formData.category_id) {
       fetchProducts();
+      fetchParameters();
     }
   }, [formData.category_id]);
 
@@ -201,7 +211,15 @@ export default function CreateTierList() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, image_url, description')
+        .select(`
+          id, 
+          name, 
+          image_url, 
+          description,
+          specifications,
+          parameter_values,
+          categories:category_id (name)
+        `)
         .eq('category_id', formData.category_id)
         .order('name');
 
@@ -224,6 +242,34 @@ export default function CreateTierList() {
       toast({
         title: "Erro",
         description: "Não foi possível carregar os produtos.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchParameters = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('category_parameters')
+        .select(`
+          parameters:parameter_id (
+            id,
+            name,
+            parameter_type,
+            options
+          )
+        `)
+        .eq('category_id', formData.category_id);
+
+      if (error) throw error;
+      
+      const parametersData = data?.map(cp => cp.parameters).filter(Boolean) || [];
+      setParameters(parametersData);
+    } catch (error) {
+      console.error('Erro ao buscar parâmetros:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os parâmetros.",
         variant: "destructive",
       });
     }
@@ -539,6 +585,7 @@ export default function CreateTierList() {
                                 key={productId}
                                 id={productId}
                                 product={product}
+                                parameters={parameters}
                               />
                             );
                           })}
@@ -594,6 +641,7 @@ export default function CreateTierList() {
                               key={productId}
                               id={productId}
                               product={product}
+                              parameters={parameters}
                             />
                           );
                         })}
@@ -605,24 +653,17 @@ export default function CreateTierList() {
 
               <DragOverlay>
                 {activeId ? (
-                  <div className="w-20 h-20 bg-card border rounded-lg p-1 flex flex-col items-center justify-center text-center shadow-lg">
+                  <div className="opacity-80">
                     {(() => {
                       const product = getProduct(activeId);
                       return product ? (
-                        <>
-                          {product.image_url ? (
-                            <img
-                              src={product.image_url}
-                              alt={product.name}
-                              className="w-8 h-8 object-cover rounded"
-                            />
-                          ) : (
-                            <Package className="w-6 h-6 text-muted-foreground" />
-                          )}
-                          <span className="text-xs text-foreground truncate w-full">
-                            {product.name}
-                          </span>
-                        </>
+                        <ProductCardEnhanced
+                          product={product}
+                          parameters={parameters}
+                          draggable={false}
+                          size="medium"
+                          showDetails={false}
+                        />
                       ) : null;
                     })()}
                   </div>
